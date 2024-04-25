@@ -132,7 +132,8 @@ public class Card : MonoBehaviour
     public void CardBtn()
     {
         if (isFlipped || isturning) return;
-       CardSelection selection = SelectionEvent;
+        AudioPlayer.Instance.PlayAudio(AudioPlayer.ButtonAudio);
+        CardSelection selection = SelectionEvent;
         Flip(selection);
     }
 

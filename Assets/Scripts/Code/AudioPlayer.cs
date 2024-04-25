@@ -11,7 +11,7 @@ public class AudioPlayer : GenericSingletonClass<AudioPlayer>
     private AudioClip[] audio;
 
     private static float vol = 1;
-
+    public const int ButtonAudio = 0, ThemeAudio = 2 , EndGame = 1;
  
     public void PlayAudio(int id)
     {
@@ -22,5 +22,15 @@ public class AudioPlayer : GenericSingletonClass<AudioPlayer>
         audioSource.PlayOneShot(audio[id], vol);
     }
 
-
+    public void PlayThemeAudio()
+    {
+        bool status = GetComponent<AudioSource>().isPlaying;
+        if (status == false)
+        {
+            GetComponent<AudioSource>().clip =(audio[ThemeAudio]);
+            GetComponent<AudioSource>().loop = true;
+            GetComponent<AudioSource>().Play();
+        }
+       
+    }
 }

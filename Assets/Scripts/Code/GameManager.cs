@@ -9,7 +9,7 @@ public class GameManager : MonoBehaviour
 {
     // list of card
     private List<Card> cards = new List<Card>();
-    private int gameSize = 5;
+    private int gridTotalSize = 5;
     // parent object of cards
     [SerializeField]
     private Transform _cardParent;
@@ -26,6 +26,7 @@ public class GameManager : MonoBehaviour
     private CardType _selectedCardType = CardType.none;
     private int _selectedCardID = -1;
     private int _noOfRetries = 5;
+    private int _selectedRowsConfig=0 , _selectedColConfig=0;
     private void OnEnable()
     {
         GameInitialise();
@@ -43,111 +44,98 @@ public class GameManager : MonoBehaviour
             Destroy(child.gameObject);
         }
         cards.Clear();
-       
+        Events.instance.RemoveListener<CardSelectionGameEvent>(ListenerRemoved);
+        Events.instance.RemoveListener<GridSizeGameEvent>(ListenerRemoved);
+    }
+
+    private void ListenerRemoved(GameEvent e)
+    {
+        Debug.Log(e.ToString() + "listener removed");
     }
 
     private void GameInitialise()
     {
         Events.instance.AddListener<CardSelectionGameEvent>(SelectCard);
-        gameSize = (_database.Rows * _database.Colums);
-        SetPanel();
-        SpriteAllocation();
-        StartCoroutine(HideFace());
-        UpdateLifes(_noOfRetries);
-        UpdateScore(_currentScore);
-      
+        Events.instance.AddListener<GridSizeGameEvent>(SetGridConfig);
+
+        StartCoroutine(DelayedGameSetup());
     }
 
-
-    private void SetPanel()
+    private void SetGridConfig(GridSizeGameEvent e)
     {
-        // if game is odd, we should have 1 card less
-        int isOdd = gameSize % 2;
+        _selectedRowsConfig = (int)e.rows;
+        _selectedColConfig = (int)e.cols;
+    }
+    private IEnumerator DelayedGameSetup()
+    {
+        yield return new WaitUntil(() => _selectedRowsConfig != 0);
+        gridTotalSize = (_selectedRowsConfig * _selectedColConfig);
+        GamePanelSetUp();
+        AllocationOfSpritesToCards();
+        StartCoroutine(FlipCard());
+        UpdateLifes(_noOfRetries);
+        UpdateScore(_currentScore);
+    }
+    private void GamePanelSetUp()
+    {
+        // if total grid size is odd, we should have 1 card less
+        int _hasBlankCard = gridTotalSize % 2;
         // remove all gameobject from parent
         GameReset();
         DataManager.Instance.ResetCurrentScore();
         // calculate position between each card & start position of each card based on the Panel
-        RectTransform panelsize = _cardPanel.transform.GetComponent<RectTransform>();
-        float row_size = panelsize.sizeDelta.x;
-        float col_size = panelsize.sizeDelta.y;
-        float scaleX = 1.0f / _database.Rows;
-        float scaleY = 1.0f / _database.Colums;
-        float xInc = row_size / _database.Rows;
-        float yInc = col_size / _database.Colums;
-        float curX = -xInc * (float)(_database.Rows / 2);
-        float curY = -yInc * (float)(_database.Colums / 2);
-        
-        if (isOdd == 0)
+        RectTransform _panelSize = _cardPanel.transform.GetComponent<RectTransform>();
+        float _panelRowSize = _panelSize.sizeDelta.x;
+        float _panelColSize = _panelSize.sizeDelta.y;
+        float _cardScaleX = 1.0f / _selectedRowsConfig;
+        float _cardScaleY = 1.0f / _selectedColConfig;
+        float _cardWidth = _panelRowSize / _selectedRowsConfig;
+        float _cardHeight = _panelColSize / _selectedColConfig;
+        float _cardPositionX = -_cardWidth * (float)(_selectedRowsConfig / 2);
+        float _cardPositionY = -_cardHeight * (float)(_selectedColConfig / 2);
+
+        if(_selectedRowsConfig % 2 == 0)
         {
-            if(_database.Rows == _database.Colums)
-            {
-                curX += xInc / 2;
-                curY += yInc / 2;
-            }
-           else if(_database.Rows%2 == 0 && _database.Colums%2 == 0) 
-            {
-                if (_database.Rows > _database.Colums)
-                {
-                    curX += xInc / 2;
-                    curY += yInc / (_database.Rows - _database.Colums);
-                }
-                else
-                {
-                    curX += xInc / (_database.Colums - _database.Rows);
-                    curY += yInc / 2;
-                }
-            }
-            else
-            {
-                if (_database.Rows > _database.Colums)
-                {
-                    curX += xInc / 2;
-                    //curY += yInc / (_database.Rows - _database.Colums);
-                }
-                else
-                {
-                   // curX += xInc / (_database.Colums - _database.Rows);
-                    curY += yInc / 2;
-                }
-            }
-            
-            
+         _cardPositionX += _cardWidth / 2;
         }
 
-        float initialX = curX;
-        // for each in y-axis
-        for (int i = 0; i < _database.Colums; i++)
+        if(_selectedColConfig % 2 == 0)
         {
-            curX = initialX;
+             _cardPositionY += _cardHeight / 2;
+        }
+
+        float initialX = _cardPositionX;
+        // for each in y-axis
+        for (int i = 0; i < _selectedColConfig; i++)
+        {
+            _cardPositionX = initialX;
             // for each in x-axis
-            for (int j = 0; j < _database.Rows; j++)
+            for (int j = 0; j < _selectedRowsConfig; j++)
             {
-                GameObject c;
+                GameObject _dummyCard;
                 // if is the last card and game is odd, we instead move the middle card on the panel to last spot
-                if (isOdd == 1 && i == (_database.Colums - 1) && j == (_database.Rows - 1))
+                if (_hasBlankCard == 1 && i == (_selectedColConfig - 1) && j == (_selectedRowsConfig - 1))
                 {
-                    int index = _database.Colums / 2 * _database.Colums + _database.Rows / 2;
-                    c = cards[index].gameObject;
+                    int index = _selectedColConfig / 2 * _selectedColConfig + _selectedRowsConfig / 2;
+                    _dummyCard = cards[index].gameObject;
                 }
                 else
                 {
                     // create card prefab
-                    c = Instantiate(_cardPrefab);
+                    _dummyCard = Instantiate(_cardPrefab);
                     // assign parent
-                    c.transform.SetParent(_cardParent);
-
-                    //int index = i * gameSize + j;
-                    Card currentCard = c.GetComponent<Card>();
+                    _dummyCard.transform.SetParent(_cardParent);
+                    Card currentCard = _dummyCard.GetComponent<Card>();
                     cards.Add(currentCard);
                     currentCard.InitializeCardProperties(_database.GetBackFace());
                     // modify its size
-                    c.transform.localScale = new Vector3(scaleX, scaleY);
+                    _dummyCard.transform.localScale = new Vector3(_cardScaleX, _cardScaleY);
                 }
                 // assign location
-                c.transform.localPosition = new Vector3(curX, curY, 0);
-                curX += xInc;
+                _dummyCard.transform.localPosition = new Vector3(_cardPositionX, _cardPositionY, 0);
+                _cardPositionX += _cardWidth;
             }
-            curY += yInc;
+            _cardPositionY += _cardHeight;
         }
         ResetCardID();
     }
@@ -161,7 +149,7 @@ public class GameManager : MonoBehaviour
     }
 
     // Allocate pairs of sprite to card instances
-    private void SpriteAllocation()
+    private void AllocationOfSpritesToCards()
     {
         List<Card> tempCards = cards.ToList();
        while(tempCards.Count > 0) 
@@ -180,7 +168,7 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    IEnumerator HideFace()
+    IEnumerator FlipCard()
     {
         //display for a short moment before flipping
         yield return new WaitForSeconds(0.3f);
@@ -226,11 +214,11 @@ public class GameManager : MonoBehaviour
             }
             _selectedCardType = CardType.none;
             _selectedCardID = -1;
-            CheckGame();
+            CheckGameWinCondition();
         }
     }
 
-    private void CheckGame()
+    private void CheckGameWinCondition()
     {
         // win game
         if (cards.Count <= 0)
@@ -248,7 +236,7 @@ public class GameManager : MonoBehaviour
 
     private void EndGame(string reason)
     {
-       
+        AudioPlayer.Instance.PlayAudio(AudioPlayer.EndGame);
         DataManager.Instance.SetReason(reason);
         DataManager.Instance.SetLastPlayedScore(_currentScore);
         StateController.Instance.ChangeState(GameState.PostGame);

@@ -20,8 +20,13 @@ public class PostGameMenuController : MonoBehaviour
 
     }
 
+    private void OnDisable()
+    {
+        NavToHome.onClick.RemoveAllListeners();
+    }
     private void GotoHome()
     {
+        AudioPlayer.Instance.PlayAudio(AudioPlayer.ButtonAudio);
         StateController.Instance.ChangeState(GameState.StartGame);
     }
 }

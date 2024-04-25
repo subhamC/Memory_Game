@@ -23,6 +23,19 @@ public class CardSelectionGameEvent : GameEvent
 
 }
 
+public class GridSizeGameEvent : GameEvent
+{
+    public float cols;
+    public float rows;
+
+    public GridSizeGameEvent(float col, float row)
+    {
+        cols = col;
+        rows = row;
+    }
+
+}
+
 public enum CardType
 {
     none,
