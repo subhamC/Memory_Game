@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using Newtonsoft.Json;
 
 public class DataManager : GenericSingletonClass<DataManager>
 {
@@ -9,7 +10,7 @@ public class DataManager : GenericSingletonClass<DataManager>
      private string _reason;
 
     private const string OverAllScore = "OverAllScore";
-   
+    private const string HalfPlayedData = "LevelData";
 
     public int OverallScore
     {
@@ -60,6 +61,29 @@ public class DataManager : GenericSingletonClass<DataManager>
     public void SetReason(string text)
     {
         Reason = text;
+    }
+
+    public void SetLevelData(LevelData levelData )
+    {
+        PlayerPrefs.SetString(HalfPlayedData, JsonConvert.SerializeObject( levelData));
+        Debug.Log(JsonConvert.SerializeObject(levelData));
+    }
+
+    public LevelData GetLevelData()
+    {
+        
+        string levelString = PlayerPrefs.GetString(HalfPlayedData, string.Empty);
+        if (levelString != string.Empty)
+        {
+            LevelData data = new LevelData();
+            data = JsonConvert.DeserializeObject<LevelData>(levelString);
+            return data;
+        }
+        else 
+        {
+            return null;
+        }
+       
     }
 
     public int GetOverAllScore()

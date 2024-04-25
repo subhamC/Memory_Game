@@ -9,8 +9,6 @@ public class AudioPlayer : GenericSingletonClass<AudioPlayer>
     private AudioSource audioSource;
     [SerializeField]
     private AudioClip[] audio;
-
-    private static float vol = 1;
     public const int ButtonAudio = 0, ThemeAudio = 2 , EndGame = 1;
  
     public void PlayAudio(int id)

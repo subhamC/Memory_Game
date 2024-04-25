@@ -7,8 +7,8 @@ using UnityEngine.UI;
 public class Card : MonoBehaviour
 {
 
-    [HideInInspector]public CardType cType;
-    [HideInInspector] public CardScriptableObject card;
+    [HideInInspector]public CardType CType;
+    [HideInInspector] public CardScriptableObject CardSO;
     [HideInInspector] public int CardID = -1;
     private bool isFlipped = false , isturning = false;
     public Image artwork = null;
@@ -29,11 +29,11 @@ public class Card : MonoBehaviour
 
     public void InitializeCardProperties(Sprite Default)
     {
-        if(card != null)
+        if(CardSO != null)
         {
-            cType = card.type;
-            artwork.sprite = card.artwork;
-            assignedArtwork = card.artwork;
+            CType = CardSO.type;
+            artwork.sprite = CardSO.artwork;
+            assignedArtwork = CardSO.artwork;
         }
         else
         {
@@ -45,7 +45,7 @@ public class Card : MonoBehaviour
 
     public void SetCardScriptableObject(CardScriptableObject card)
     {
-        this.card = card;
+        this.CardSO = card;
     }
 
     public void Flip(CardSelection selection = null, float startDelay = 0)
@@ -140,7 +140,7 @@ public class Card : MonoBehaviour
 
     private void SelectionEvent()
     {
-        Events.instance.Raise(new CardSelectionGameEvent(cType, CardID));
+        Events.instance.Raise(new CardSelectionGameEvent(CType, CardID));
      
     }
 

@@ -9,7 +9,8 @@ public class GameManager : MonoBehaviour
 {
     // list of card
     private List<Card> cards = new List<Card>();
-    private int gridTotalSize = 5;
+    private Dictionary<int,CardType> _remainingCards = new Dictionary<int,CardType>();
+    private int gridTotalSize ;
     // parent object of cards
     [SerializeField]
     private Transform _cardParent;
@@ -20,6 +21,7 @@ public class GameManager : MonoBehaviour
     private int _scoreToBeAdded = 10;
     private int _currentScore =0;
     [SerializeField] private Text LifesTxt , ScoreTxt;
+    [SerializeField] private Button _navToHome;
     // Initialize cards, size, and position based on size of game
     [SerializeField]
     private CardDatabaseScriptableObject _database;
@@ -46,6 +48,14 @@ public class GameManager : MonoBehaviour
         cards.Clear();
         Events.instance.RemoveListener<CardSelectionGameEvent>(ListenerRemoved);
         Events.instance.RemoveListener<GridSizeGameEvent>(ListenerRemoved);
+        _navToHome.onClick.RemoveAllListeners();
+        if(_remainingCards == null)
+        {
+            _noOfRetries = 5;
+            _currentScore = 0;
+
+        }
+    
     }
 
     private void ListenerRemoved(GameEvent e)
@@ -57,14 +67,41 @@ public class GameManager : MonoBehaviour
     {
         Events.instance.AddListener<CardSelectionGameEvent>(SelectCard);
         Events.instance.AddListener<GridSizeGameEvent>(SetGridConfig);
-
+       
         StartCoroutine(DelayedGameSetup());
+    }
+
+    private void OnBackClicked()
+    {
+        LevelData data = new LevelData();
+        data.LevelCol = _selectedColConfig;
+        data.LevelRow = _selectedRowsConfig;
+       
+        for (int i = 0; i < _cardParent.childCount; i++)
+        {
+            if(_cardParent.GetChild(i).gameObject.activeInHierarchy)
+            {
+                data.CardKeyValues.Add(i, _cardParent.GetChild(i).GetComponent<Card>().CType);
+            }
+        }
+        data.RemainingLives = _noOfRetries;
+        data.Score = _currentScore;
+
+        DataManager.Instance.SetLevelData(data);
+        StateController.Instance.ChangeState(GameState.StartGame);
+
     }
 
     private void SetGridConfig(GridSizeGameEvent e)
     {
         _selectedRowsConfig = (int)e.rows;
         _selectedColConfig = (int)e.cols;
+        _remainingCards = e.keyValues;
+        if(_remainingCards != null)
+        {
+            _noOfRetries = e.RemainingLifes;
+            _currentScore = e.Score;
+        }
     }
     private IEnumerator DelayedGameSetup()
     {
@@ -73,8 +110,38 @@ public class GameManager : MonoBehaviour
         GamePanelSetUp();
         AllocationOfSpritesToCards();
         StartCoroutine(FlipCard());
+       
+        _navToHome.onClick.AddListener(() => OnBackClicked());
+        if (_remainingCards != null)
+        {
+            for (int i = 0; i < _cardParent.childCount; i++)
+            {
+                _cardParent.GetChild(i).gameObject.SetActive(false);
+               
+            }
+            var _remainigCardIds = _remainingCards.Keys;
+            foreach (var item in _remainigCardIds)
+            {
+                _cardParent.GetChild(item).gameObject.SetActive(true);
+                _cardParent.GetChild(item).GetComponent<Card>().SetCardScriptableObject(_database.GetCard(_remainingCards[item]));
+                _cardParent.GetChild(item).GetComponent<Card>().InitializeCardProperties(null);
+            }
+            
+            for (int i = 0; i < _cardParent.childCount; i++)
+            {
+                if(_cardParent.GetChild(i).gameObject.activeInHierarchy == false)
+                {
+                    cards.Remove(_cardParent.GetChild(i).GetComponent<Card>());
+                }
+
+            }
+           
+            ResetCardID();
+        }
+
         UpdateLifes(_noOfRetries);
         UpdateScore(_currentScore);
+
     }
     private void GamePanelSetUp()
     {

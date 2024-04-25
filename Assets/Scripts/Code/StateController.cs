@@ -54,7 +54,7 @@ public class StateController : GenericSingletonClass<StateController>
     {
         foreach (var stateItem in StateDB)
         {
-            if(stateItem.state == state)
+            if(stateItem.State == state)
             {
                 return stateItem.StateObject;
             }

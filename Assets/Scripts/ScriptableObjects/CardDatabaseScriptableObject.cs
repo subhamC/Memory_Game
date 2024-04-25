@@ -1,3 +1,4 @@
+using Newtonsoft.Json.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -12,6 +13,15 @@ public class CardDatabaseScriptableObject : ScriptableObject
     {
         int value = Random.Range(0, CardsData.Count - 1);
         return CardsData[value];
+    }
+    public CardScriptableObject GetCard(CardType type)
+    {
+        for (int i = 0; i < CardsData.Count; i++)
+        {
+            if(CardsData[i].type == type)
+                return CardsData[i];
+        }
+        return null;
     }
 
     public Sprite GetBackFace()

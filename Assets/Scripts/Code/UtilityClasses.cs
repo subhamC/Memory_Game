@@ -5,9 +5,17 @@ using UnityEngine;
 [System.Serializable]
 public class GameStateStep
 {
-    public GameState state;
+    public GameState State;
     public GameObject StateObject;
 
+}
+
+[System.Serializable]
+public class LevelData
+{
+    public int LevelRow,LevelCol;
+    public int RemainingLives, Score;
+    public Dictionary<int, CardType> CardKeyValues = new Dictionary<int, CardType>();
 }
 
 public class CardSelectionGameEvent : GameEvent
@@ -23,15 +31,22 @@ public class CardSelectionGameEvent : GameEvent
 
 }
 
+
+
 public class GridSizeGameEvent : GameEvent
 {
     public float cols;
     public float rows;
-
-    public GridSizeGameEvent(float col, float row)
+    public Dictionary<int, CardType> keyValues = new Dictionary<int, CardType>();
+    public int RemainingLifes, Score;
+  
+    public GridSizeGameEvent(float row, float col, Dictionary<int, CardType> keyValues = null , int lifes = -1 , int score = -1)
     {
         cols = col;
         rows = row;
+        this.keyValues = keyValues;
+        RemainingLifes = lifes;
+        Score = score;
     }
 
 }
